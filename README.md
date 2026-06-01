@@ -2,6 +2,8 @@
 
 A collection of redistributable [Claude Code](https://claude.com/claude-code) skills.
 
+Built and maintained at [State Change AI](https://statechange.ai), where we work on this kind of thing.
+
 ## Skills
 
 | Skill | Description |
@@ -20,3 +22,7 @@ cp -R skills/graveyard-shift ~/.claude/skills/
 # Or project-level
 cp -R skills/graveyard-shift .claude/skills/
 ```
+
+## License
+
+[MIT](LICENSE) © Ray Deck / [State Change AI](https://statechange.ai)
