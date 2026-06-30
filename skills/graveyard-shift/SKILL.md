@@ -129,6 +129,8 @@ For each:
 4. Open PR, run the `codex-pr` review loop (budget-aware engine, judgment gate, stopping rules)
 5. Merge when clean (or stopping window hit with only manageable P2s — apply silently per skill exception and ship)
 
+**Ship-into-observation is part of the diff, not a follow-up.** When an auto-ship lands judgment-shaped work that wants watching, the worker reopens with the `observing` label and the observation contract (see the `observation-mode` skill) — and the **Signal source must be instrumented in the same PR**: if "watch for X" needs a log line/counter/metric production doesn't emit, the worker *adds it in this diff* and fills the Signal source field (artifact + query + threshold). A contract the worker cannot make queryable is the signal to route the item back to **prep** instead, exactly as a failed eligibility gate does. (Non-instrumentable work — copy/doc/eval — uses a concrete non-code signal source per the carve-out in `observation-mode`; don't manufacture a metric for a trivial change whose revert is free.)
+
 ### 2. Prep — concrete code, but wants the user's eye
 
 Build the prototype, push as a **draft PR**, leave open for review. Do NOT merge.
@@ -176,8 +178,8 @@ The skip bucket is the smallest one. Be aggressive about ruling things INTO anot
 
 Everything else routes to one of the action buckets:
 - Parent meta-issues / umbrella threads → `shape-an-epic` with the "audit + replan" flavor (annotate what's shipped under it, scope what's left)
-- Observation tasks (user has to look at logs) → still useful to file a proposal naming WHAT the operator should look for and WHEN; that's not skip, it's a sharpened observation issue
-- Speculative bug fixes for unobserved shapes → `shape-an-epic` with explicit "When to pick up" naming the observable signal
+- Observation tasks (user has to look at logs) → still useful to file a proposal naming the **signal source** (the production artifact, the query that reads it, and the threshold) and WHEN to read it; that's not skip, it's a sharpened observation issue
+- Speculative bug fixes for unobserved shapes → `shape-an-epic` with explicit "When to pick up" naming the observable signal and where it'd be queried
 - Issues blocked on a parent that requires user approval → check if you can land the parent's *unblocked* child first; if not, `shape-an-epic` the parent so the approval gate is concrete
 
 Skip should fit in a short list at the end of the summary. If skip is more than ~25% of the backlog, you're skipping things that wanted shaping.
