@@ -39,7 +39,9 @@ Label:    running
 
 **Lifecycle: register at launch → heartbeat while running → close on completion (noting the freed resource).** A heartbeat that goes stale past the threshold flips a sweep's read from "running, leave it alone" to "investigate — possibly dead": the same liveness logic as a brief stuck "In Progress" too long. Reaping is a human/agent decision (read `Reap`, confirm the job is actually dead, then close), never an automatic kill — the register is a *discipline* (you register at launch), not a process monitor or an enforced lock. "Holds: GPU" is a human-readable occupancy flag a sweep respects, not a mutex.
 
-**What a shift does with it** lives in the `graveyard-shift` skill (start-of-shift sweep + register-on-launch + reap) — the canonical reader. `running` is the complement to `observing`: together they answer "what's in flight" — `running` = *still executing, holding resources* (pre-completion); `observing` = *merged, watching a signal* (post-completion). They are genuinely different states, so they are distinct labels; conflating them would muddy both sweeps.
+**Both shift modes read `running` first.** The `graveyard-shift` skill is the canonical reader (start-of-shift sweep + register-on-launch + reap). The `shift-change` skill is the second reader: it lists `running` jobs in its agenda compile as **in-flight actors with age — explicitly not as decisions awaiting the user** (a still-running eval is not a fork; misfiling it as one is exactly the noise shift-change strips). Together they keep both the autonomous and the live mode from colliding with, double-running, or misreporting a live job.
+
+`running` is the complement to `observing`: together they answer "what's in flight" — `running` = *still executing, holding resources* (pre-completion); `observing` = *merged, watching a signal* (post-completion). They are genuinely different states, so they are distinct labels; conflating them would muddy both sweeps.
 
 ### 2. Global work → Notion Briefs DB
 
