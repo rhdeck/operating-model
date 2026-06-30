@@ -11,6 +11,34 @@ way it is*.
 
 ## 2026-06-30
 
+### The running register — track cross-shift live jobs on a `running` label (#13)
+**Decision:** Add the **running register** as model doctrine: the *executing-now*
+sibling of the `observing` register. Substrate is a **GitHub `running` label,
+one issue per live cross-shift job**, in the repo where the work runs —
+registered at launch, heartbeated while executing, closed (reaped) on completion
+noting the freed resource. The graveyard sweeps `gh issue list --label running`
+at start of shift (held resources / live actors — don't collide, don't re-run,
+don't misreport a still-running job as a decision) alongside the existing
+stale-draft + `observing` sweeps. Documented the entry shape (What / Where /
+Holds / Output / ETA / Reap / Heartbeat) and lifecycle in
+[`knowledge-homes.md`](knowledge-homes.md). Rejected alternatives: **Notion**
+(that's the *global time-series* home — wrong quadrant for transient
+project-local liveness, and it splits the job from the issues a shift already
+sweeps) and a **single rolling register issue** (loses per-job heartbeat and
+staleness; one-issue-per-job mirrors `observing`). A *new* label, not reused
+`observing`, because they're different states: `running` = still executing,
+holding resources (pre-completion); `observing` = merged, watching a signal
+(post-completion).
+**Why:** a long-running job (eval, training run, remote agent, build) can
+outlive the shift that launched it and was previously invisible to the board —
+the live trigger was a Devstral vllm-mlx eval holding the GPU with no GitHub
+record (rhdeck/local-ai-comparison#37), which a later shift could blindly
+collide with. Liveness is transient, project-scoped *work*, which the four-homes
+model puts in GitHub — and the graveyard already sweeps GitHub at start of
+shift, so the read costs nothing new. It's a discipline (register at launch),
+not a process monitor or an enforced lock; auto-detection of orphans and
+real resource leases are explicitly out of scope.
+
 ### This repo IS the operating model; the work is improving it (docs + skills)
 **Decision:** Drop the "favorite-tools split" framing (closed #8). This
 repository is *the operating model* — its purpose is to hold and improve the
