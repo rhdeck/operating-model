@@ -10,6 +10,39 @@ Knowledge sorts on two axes — **scope** (this project vs. how-we-operate) and 
 
 What to do and what's decided, scoped to one project. Issues are the backlog and the decision record; PRs are the change record. This is where a graveyard shift reads its marching orders and writes its results. Visible (you watch the repo), versioned (issue history, PR diffs), cold-resumable ("get going on #N" is a complete handoff).
 
+Two transient board states live inside this quadrant as labels — they are project-scoped work, not durable knowledge, and they disappear when the work resolves. They are siblings that together cover everything "in flight":
+
+- **`observing` — landed-but-unproven.** A change that merged but isn't yet trusted: reopened with a named signal to watch and graduated after a quiet window. See the `observation-mode` skill. This is the *eval* substrate (watched-after-shipping).
+- **`running` — executing-now.** A live cross-shift job still holding resources. See [the running register](#the-running-register-executing-now) below.
+
+## The running register (executing-now)
+
+The `running` register is the **executing-now** sibling of the `observing` register: one GitHub issue per **live cross-shift job** — a long-running or async process that outlives the moment it was launched (a multi-hour eval, a training run, a long migration, a remote agent, a background build, a queued job). It carries a **`running` label** and lives in the repo where the work runs. Its purpose is coordination across the shift boundary: a later shift or a live session must be able to see what is *still executing* so it doesn't collide with held hardware, re-run work already in flight, or misreport a still-running job as a decision awaiting the user.
+
+**Why GitHub and not Notion.** A live job's liveness is *transient, project-scoped work* — the Project-work quadrant — and its home is therefore GitHub, the substrate the graveyard already sweeps at start of shift (so reading it costs nothing new). Notion Briefs is the *global time-series* home (progress across the business); a job may be *mentioned* in a brief, but its system of record is the GitHub issue, not the brief. The register satisfies the decisive rule: versioned (the heartbeat is the comment/edit history), visible (you watch the repo), cold-resumable (a fresh agent finds every live actor from `label:running` with zero transcript). One issue per job — mirroring `observing` (per-change, not a master list) — so each job carries its own heartbeat, its own close-with-result, and a clean per-job staleness signal.
+
+**The entry shape** (a body a sweep can parse by eye):
+
+```
+Title:    [running] <one-line what — e.g. "Devstral vllm-mlx eval (dark-horse leg)">
+Label:    running
+- What:        what is executing and what question it answers
+- Where:       host / harness (e.g. mac-studio, vllm-mlx) + how it was launched
+- Holds:       the contended resource — e.g. "GPU: one big model resident"
+               (the line a shift reads as occupied)
+- Output:      path/artifact where results land
+- ETA:         expected completion / progress N-of-M
+- Reap:        how to check status and how to stop/clean it (PID, job id,
+               `gh run watch`, queue id, screen/tmux target...)
+- Heartbeat:   <timestamp> progress, last write, revised ETA   ← updated as it runs
+```
+
+**Lifecycle: register at launch → heartbeat while running → close on completion (noting the freed resource).** A heartbeat that goes stale past the threshold flips a sweep's read from "running, leave it alone" to "investigate — possibly dead": the same liveness logic as a brief stuck "In Progress" too long. Reaping is a human/agent decision (read `Reap`, confirm the job is actually dead, then close), never an automatic kill — the register is a *discipline* (you register at launch), not a process monitor or an enforced lock. "Holds: GPU" is a human-readable occupancy flag a sweep respects, not a mutex.
+
+**Both shift modes read `running` first.** The `graveyard-shift` skill is the canonical reader (start-of-shift sweep + register-on-launch + reap). The `shift-change` skill is the second reader: it lists `running` jobs in its agenda compile as **in-flight actors with age — explicitly not as decisions awaiting the user** (a still-running eval is not a fork; misfiling it as one is exactly the noise shift-change strips). Together they keep both the autonomous and the live mode from colliding with, double-running, or misreporting a live job.
+
+`running` is the complement to `observing`: together they answer "what's in flight" — `running` = *still executing, holding resources* (pre-completion); `observing` = *merged, watching a signal* (post-completion). They are genuinely different states, so they are distinct labels; conflating them would muddy both sweeps.
+
 ### 2. Global work → Notion Briefs DB
 
 Progress and time-series across the whole business — shift reports, briefs, plans — for *every* project, newest-first, tagged by project. This is the cross-project log of what's moving. Published via the `notion-briefs` CLI; never a local `test-plans/*.md` file.
